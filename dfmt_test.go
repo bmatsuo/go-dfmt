@@ -2,6 +2,7 @@ package dfmt
 
 import (
 	"fmt"
+	"errors"
 	"testing"
 )
 
@@ -21,6 +22,7 @@ func TestCompatability(t *testing.T) {
 	}
 	for i, test := range []interface{}{
 		nil,
+		errors.New("foobar"),
 		(*testStruct)(nil),
 		"abc",
 		12 + 4i,
