@@ -119,6 +119,7 @@ func (f *formatter) format(s fmt.State, c rune, val reflect.Value) {
 	case reflect.Struct:
 		f.formatStruct(s, c, val)
 	default:
+		// XXX numbers give undesired output with the space flag.
 		fmt.Fprintf(s, reconstructFlags(s, 'v'), val.Interface())
 	}
 }
