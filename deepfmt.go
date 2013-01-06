@@ -54,11 +54,13 @@ type formatter struct {
 	verbose bool
 	deep    bool
 	pretty  bool
+	ifaceok bool
 	v       interface{}
 }
 
 // Wrap v up in a formatter that overrides %v and accepts flags
 //		+	follow pointers
+//		-   ignore interfaces fmt.Formatter, fmt.GoStringer, fmt.Stringer, and error
 //		' '	pretty print
 //		#	print types
 func NewFormatter(v interface{}) fmt.Formatter {
@@ -79,22 +81,30 @@ func (f *formatter) Format(s fmt.State, c rune) {
 	f.verbose = s.Flag('#')
 	f.deep = s.Flag('+')
 	f.pretty = s.Flag(' ')
+	f.ifaceok = !s.Flag('-')
 	f.format(s, c, reflect.ValueOf(f.v))
 }
 
 func (f *formatter) format(s fmt.State, c rune, val reflect.Value) {
-	if !f.verbose {
-		switch v := val.Interface(); v.(type) {
-		case fmt.Stringer:
-			fmt.Fprint(s, v.(fmt.Stringer).String())
-			return
-		case error:
-			fmt.Fprint(s, v.(error).Error())
+	if f.ifaceok {
+		v := val.Interface()
+		if formatter, ok := v.(fmt.Formatter); ok {
+			formatter.Format(s, c)
 			return
 		}
-	} else if gs, ok := val.Interface().(fmt.GoStringer); ok {
-		fmt.Fprint(s, gs.GoString())
-		return
+		if !f.verbose {
+			switch v.(type) {
+			case fmt.Stringer:
+				fmt.Fprint(s, v.(fmt.Stringer).String())
+				return
+			case error:
+				fmt.Fprint(s, v.(error).Error())
+				return
+			}
+		} else if gs, ok := v.(fmt.GoStringer); ok {
+			fmt.Fprint(s, gs.GoString())
+			return
+		}
 	}
 
 	switch val.Kind() {
