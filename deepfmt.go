@@ -57,6 +57,10 @@ type formatter struct {
 	v       interface{}
 }
 
+// Wrap v up in a formatter that overrides %v and accepts flags
+//		+	follow pointers
+//		' '	pretty print
+//		#	print types
 func NewFormatter(v interface{}) fmt.Formatter {
 	return &formatter{v: v}
 }
@@ -282,15 +286,15 @@ func addFlagRune(q []rune, s fmt.State, r rune) []rune {
 	return q
 }
 
-func Printf(format string, v ...interface{}) {
-	Fprintf(os.Stdout, format, v...)
+func printf(format string, v ...interface{}) {
+	fprintf(os.Stdout, format, v...)
 }
-func Sprintf(format string, v ...interface{}) string {
+func sprintf(format string, v ...interface{}) string {
 	buf := new(bytes.Buffer)
-	Fprintf(buf, format, v...)
+	fprintf(buf, format, v...)
 	return buf.String()
 }
-func Fprintf(w io.Writer, format string, v ...interface{}) {
+func fprintf(w io.Writer, format string, v ...interface{}) {
 	_v := make([]interface{}, len(v))
 	for i := range v {
 		_v[i] = NewFormatter(v[i])
