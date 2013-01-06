@@ -1,4 +1,10 @@
-// A drop-in replacement for the standard library fmt package which uses deepformat.Formatter.
+/*
+A drop-in replacement for the standard library fmt package which uses
+deepformat.Formatter.
+
+This package is not performant. Use it during development but keep fmt in
+production code.
+*/
 package fmt
 
 import (
