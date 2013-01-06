@@ -60,7 +60,7 @@ type formatter struct {
 
 // Wrap v up in a formatter that overrides %v and accepts flags
 //		+	follow pointers
-//		-   ignore interfaces fmt.Formatter, fmt.GoStringer, fmt.Stringer, and error
+//		-	ignore interfaces fmt.Formatter, fmt.GoStringer, fmt.Stringer, and error
 //		' '	pretty print
 //		#	print types
 func NewFormatter(v interface{}) fmt.Formatter {
