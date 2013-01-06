@@ -15,7 +15,7 @@ type testStruct struct {
 func TestCompatability(t *testing.T) {
 	testflags := func(flags string, i int, test interface{}) {
 		std := fmt.Sprintf("%"+flags+"v", test)
-		deep := fmt.Sprintf("%"+flags+"v", Formatter(debugging, test))
+		deep := fmt.Sprintf("%"+flags+"v", Formatter(debug, test))
 		if std != deep {
 			t.Errorf("[%d] "+flags+" mismatch %q != %q ", i, std, deep)
 		}
@@ -86,7 +86,7 @@ func TestDeepfmt(t *testing.T) {
 		printf(Deep|Pretty, "%#v\n", struct{ A, b int }{1, 2})
 		printf(Deep, "%#v\n", testStruct{nil, map[string]int{"abc": 2}})
 		printf(Deep, "%#v\n", &testStruct{nil, map[string]int{"abc": 2}})
-		printf(Deep|debugging, "%#v\n", &testStruct{&testStruct{}, map[string]int{"abc": 2}})
+		printf(Deep|debug, "%#v\n", &testStruct{&testStruct{}, map[string]int{"abc": 2}})
 
 		var x ****testStruct
 		x = new(***testStruct)

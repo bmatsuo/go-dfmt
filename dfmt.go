@@ -52,10 +52,12 @@ func writeFullIndent(s fmt.State, n int) {
 type FormatMode uint
 
 const (
-	Deep FormatMode = 1 << iota
-	Pretty
-	NoIface
-	debugging
+	noop     FormatMode = 1 << iota
+	Deep                // follow pointers
+	Pretty              // pretty print
+	NoIface             // ignore fmt interfaces
+	NoComply            // use noncompliant flags TODO
+	debug
 )
 
 type formatter struct {
@@ -70,23 +72,20 @@ type formatter struct {
 	v       interface{}
 }
 
-// Wrap v up in a formatter that overrides %v and accepts flags
-//		+	follow pointers
-//		-	ignore interfaces fmt.Formatter, fmt.GoStringer, fmt.Stringer, and error
-//		' '	pretty print
-//		#	print types
+// Wrap v in a fmt.Formatter that overrides %v and applies FormatModes.
 func Formatter(mode FormatMode, v interface{}) fmt.Formatter {
 	return &formatter{
 		deep:    mode&Deep != 0,
 		pretty:  mode&Pretty != 0,
 		ifaceok: mode&NoIface == 0,
-		debug:   mode&debugging != 0,
+		debug:   mode&debug != 0,
 		v:       v,
 	}
 }
 
 func (f *formatter) Format(s fmt.State, c rune) {
 	if c != 'v' || (!f.deep && !f.pretty && f.ifaceok && !f.debug) {
+		// default printf
 		newfmt := reconstructFlags(s, c)
 		fmt.Fprintf(s, newfmt, f.v)
 		return
@@ -104,6 +103,7 @@ func (f *formatter) Format(s fmt.State, c rune) {
 
 func (f *formatter) format(s fmt.State, c rune, val reflect.Value) {
 	if f.ifaceok {
+		// check fmt interface overrides
 		v := val.Interface()
 		if formatter, ok := v.(fmt.Formatter); ok {
 			formatter.Format(s, c)
@@ -136,7 +136,6 @@ func (f *formatter) format(s fmt.State, c rune, val reflect.Value) {
 	case reflect.Struct:
 		f.formatStruct(s, c, val)
 	default:
-		// XXX numbers give undesired output with the space flag.
 		fmt.Fprintf(s, reconstructFlags(s, 'v'), val.Interface())
 	}
 }
