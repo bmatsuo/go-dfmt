@@ -19,19 +19,22 @@ func TestCompatability(t *testing.T) {
 		12 + 4i,
 		[]string{"a", "b"},
 		map[string]int64{"a": 1}, // map iteration order consistant
+		map[string]interface{}{"a": &testStruct{}},
+		[]interface{}{&testStruct{}},
 		&struct{ A, b int }{1, 2},
 		struct{ A, b int }{1, 2},
 		testStruct{nil, map[string]int{"abc": 2}},
 		&testStruct{nil, map[string]int{"abc": 2}},
+		testStruct{&testStruct{}, map[string]int{"abc": 2}},
+		&testStruct{&testStruct{}, map[string]int{"abc": 2}},
 	} {
 		std := fmt.Sprintf("%v", test)
-		deep := fmt.Sprintf("%+v", NewFormatter(test))
+		deep := fmt.Sprintf("%0v", NewFormatter(test))
 		if std != deep {
-			t.Errorf("[%d] mismatch %q != %q ", i, std, deep)
+			t.Errorf("[%d] # mismatch %q != %q ", i, std, deep)
 		}
-
 		std = fmt.Sprintf("%#v", test)
-		deep = fmt.Sprintf("%#+v", NewFormatter(test))
+		deep = fmt.Sprintf("%#0v", NewFormatter(test))
 		if std != deep {
 			t.Errorf("[%d] # mismatch %q != %q ", i, std, deep)
 		}
@@ -60,6 +63,7 @@ func TestDeepfmt(t *testing.T) {
 		Printf("%# +v\n", struct{ A, b int }{1, 2})
 		Printf("%#+v\n", testStruct{nil, map[string]int{"abc": 2}})
 		Printf("%#+v\n", &testStruct{nil, map[string]int{"abc": 2}})
+		Printf("%# 0v\n", &testStruct{&testStruct{}, map[string]int{"abc": 2}})
 
 		var x ****testStruct
 		x = new(***testStruct)

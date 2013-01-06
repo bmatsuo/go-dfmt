@@ -52,6 +52,7 @@ func writeFullIndent(s fmt.State, n int) {
 type formatter struct {
 	depth   int
 	verbose bool
+	deep    bool
 	pretty  bool
 	v       interface{}
 }
@@ -61,7 +62,7 @@ func NewFormatter(v interface{}) fmt.Formatter {
 }
 
 func (f *formatter) Format(s fmt.State, c rune) {
-	if c != 'v' || !s.Flag('+') {
+	if c != 'v' || (!s.Flag('+') && !s.Flag(' ') && !s.Flag('0')) {
 		newfmt := reconstructFlags(s, c)
 		fmt.Fprintf(s, newfmt, f.v)
 		return
@@ -72,6 +73,7 @@ func (f *formatter) Format(s fmt.State, c rune) {
 	}
 
 	f.verbose = s.Flag('#')
+	f.deep = s.Flag('+')
 	f.pretty = s.Flag(' ')
 	f.format(s, c, reflect.ValueOf(f.v))
 }
@@ -92,6 +94,19 @@ func (f *formatter) format(s fmt.State, c rune, val reflect.Value) {
 	}
 
 	switch val.Kind() {
+	case reflect.Interface:
+		if val.IsNil() {
+			if f.verbose {
+				writeType(s, val)
+				writeLeftparen(s)
+				writeNil(s)
+				writeRightparen(s)
+			} else {
+				writeNilangle(s)
+			}
+			return
+		}
+		f.format(s, c, val.Elem())
 	case reflect.Ptr:
 		if val.IsNil() {
 			if f.verbose {
@@ -103,6 +118,19 @@ func (f *formatter) format(s fmt.State, c rune, val reflect.Value) {
 				writeRightparen(s)
 			} else {
 				writeNilangle(s)
+			}
+			return
+		}
+		if !f.deep && f.depth > 0 {
+			if f.verbose {
+				writeLeftparen(s)
+				writeType(s, val)
+				writeRightparen(s)
+				writeLeftparen(s)
+				fmt.Fprintf(s, "%p", val.Interface())
+				writeRightparen(s)
+			} else {
+				fmt.Fprintf(s, "%p", val.Interface())
 			}
 			return
 		}
