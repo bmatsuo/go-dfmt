@@ -99,162 +99,176 @@ func (f *formatter) format(s fmt.State, c rune, val reflect.Value) {
 
 	switch val.Kind() {
 	case reflect.Interface:
-		if val.IsNil() {
-			if f.verbose {
-				writeType(s, val)
-				writeLeftparen(s)
-				writeNil(s)
-				writeRightparen(s)
-			} else {
-				writeNilangle(s)
-			}
-			return
-		}
-		f.format(s, c, val.Elem())
+		f.formatInterface(s, c, val)
 	case reflect.Ptr:
-		if val.IsNil() {
-			if f.verbose {
-				writeLeftparen(s)
-				writeType(s, val)
-				writeRightparen(s)
-				writeLeftparen(s)
-				writeNil(s)
-				writeRightparen(s)
-			} else {
-				writeNilangle(s)
-			}
-			return
-		}
-		if !f.deep && f.depth > 0 {
-			if f.verbose {
-				writeLeftparen(s)
-				writeType(s, val)
-				writeRightparen(s)
-				writeLeftparen(s)
-				fmt.Fprintf(s, "%p", val.Interface())
-				writeRightparen(s)
-			} else {
-				fmt.Fprintf(s, "%p", val.Interface())
-			}
-			return
-		}
-		writePtr(s)
-		f.format(s, c, reflect.Indirect(val))
+		f.formatPtr(s, c, val)
 	case reflect.Array, reflect.Slice:
-		f.depth++
-		if f.verbose {
-			writeType(s, val)
-			writeLeftcurly(s)
-			if f.pretty {
-				writeNewline(s)
-				writeFullIndent(s, f.depth)
-			}
-		} else {
-			writeLeftsquare(s)
-		}
-		for i, n := 0, val.Len(); i < n; i++ {
-			if i > 0 {
-				f.sep(s)
-			}
-			f.format(s, c, val.Index(i))
-		}
-		f.depth--
-		if f.verbose {
-			if f.pretty {
-				writeComma(s)
-				writeNewline(s)
-				writeFullIndent(s, f.depth)
-			}
-			writeRightcurly(s)
-		} else {
-			writeRightsquare(s)
-		}
+		f.formatArray(s, c, val)
 	case reflect.Map:
-		if val.IsNil() {
-			writeNil(s)
-			return
-		}
-		f.depth++
-		if f.verbose {
-			writeType(s, val)
-			writeLeftcurly(s)
-			if f.pretty {
-				writeNewline(s)
-				writeFullIndent(s, f.depth)
-			}
-		} else {
-			writeMap(s)
-			writeLeftsquare(s)
-		}
-		for i, key := range val.MapKeys() {
-			if i > 0 {
-				f.sep(s)
-			}
-			f.format(s, c, key)
-			writeColon(s)
-			f.format(s, c, val.MapIndex(key))
-		}
-		f.depth--
-		if f.verbose {
-			if f.pretty {
-				writeComma(s)
-				writeNewline(s)
-				writeFullIndent(s, f.depth)
-			}
-			writeRightcurly(s)
-		} else {
-			writeRightsquare(s)
-		}
+		f.formatMap(s, c, val)
 	case reflect.Struct:
-		f.depth++
+		f.formatStruct(s, c, val)
+	default:
+		fmt.Fprintf(s, reconstructFlags(s, 'v'), val.Interface())
+	}
+}
+func (f *formatter) formatInterface(s fmt.State, c rune, val reflect.Value) {
+	if val.IsNil() {
 		if f.verbose {
 			writeType(s, val)
-			writeLeftcurly(s)
-			if f.pretty {
-				writeNewline(s)
-				writeFullIndent(s, f.depth)
-			}
+			writeLeftparen(s)
+			writeNil(s)
+			writeRightparen(s)
 		} else {
-			writeLeftcurly(s)
+			writeNilangle(s)
 		}
-		typ := val.Type()
-		for i, n := 0, val.NumField(); i < n; i++ {
-			field := typ.Field(i)
-			if i > 0 {
-				f.sep(s)
-			}
-			if f.verbose {
-				s.Write([]byte(field.Name))
-				writeColon(s)
-			}
-			if field.PkgPath == "" {
-				f.format(s, c, val.Field(i))
-			} else {
-				field := typ.Field(i)
-				var valptr reflect.Value
-				if val.CanAddr() {
-					valptr = val.Addr()
-				} else {
-					valptr = reflect.New(typ)
-					reflect.Indirect(valptr).Set(val)
-				}
-				fieldp := valptr.Pointer() + field.Offset
-				fieldptr := reflect.NewAt(field.Type, unsafe.Pointer(fieldp))
-				f.format(s, c, reflect.Indirect(fieldptr))
-			}
+		return
+	}
+	f.format(s, c, val.Elem())
+}
+func (f *formatter) formatPtr(s fmt.State, c rune, val reflect.Value) {
+	if val.IsNil() {
+		if f.verbose {
+			writeLeftparen(s)
+			writeType(s, val)
+			writeRightparen(s)
+			writeLeftparen(s)
+			writeNil(s)
+			writeRightparen(s)
+		} else {
+			writeNilangle(s)
 		}
-		f.depth--
-		if f.verbose && f.pretty {
+		return
+	}
+	if !f.deep && f.depth > 0 {
+		if f.verbose {
+			writeLeftparen(s)
+			writeType(s, val)
+			writeRightparen(s)
+			writeLeftparen(s)
+			fmt.Fprintf(s, "%p", val.Interface())
+			writeRightparen(s)
+		} else {
+			fmt.Fprintf(s, "%p", val.Interface())
+		}
+		return
+	}
+	writePtr(s)
+	f.format(s, c, val.Elem())
+}
+func (f *formatter) formatArray(s fmt.State, c rune, val reflect.Value) {
+	f.depth++
+	if f.verbose {
+		writeType(s, val)
+		writeLeftcurly(s)
+		if f.pretty {
+			writeNewline(s)
+			writeFullIndent(s, f.depth)
+		}
+	} else {
+		writeLeftsquare(s)
+	}
+	for i, n := 0, val.Len(); i < n; i++ {
+		if i > 0 {
+			f.sep(s)
+		}
+		f.format(s, c, val.Index(i))
+	}
+	f.depth--
+	if f.verbose {
+		if f.pretty {
 			writeComma(s)
 			writeNewline(s)
 			writeFullIndent(s, f.depth)
 		}
 		writeRightcurly(s)
-	default:
-		fmt.Fprintf(s, reconstructFlags(s, 'v'), val.Interface())
+	} else {
+		writeRightsquare(s)
 	}
 }
-
+func (f *formatter) formatMap(s fmt.State, c rune, val reflect.Value) {
+	if val.IsNil() {
+		writeNil(s)
+		return
+	}
+	f.depth++
+	if f.verbose {
+		writeType(s, val)
+		writeLeftcurly(s)
+		if f.pretty {
+			writeNewline(s)
+			writeFullIndent(s, f.depth)
+		}
+	} else {
+		writeMap(s)
+		writeLeftsquare(s)
+	}
+	for i, key := range val.MapKeys() {
+		if i > 0 {
+			f.sep(s)
+		}
+		f.format(s, c, key)
+		writeColon(s)
+		f.format(s, c, val.MapIndex(key))
+	}
+	f.depth--
+	if f.verbose {
+		if f.pretty {
+			writeComma(s)
+			writeNewline(s)
+			writeFullIndent(s, f.depth)
+		}
+		writeRightcurly(s)
+	} else {
+		writeRightsquare(s)
+	}
+}
+func (f *formatter) formatStruct(s fmt.State, c rune, val reflect.Value) {
+	f.depth++
+	if f.verbose {
+		writeType(s, val)
+		writeLeftcurly(s)
+		if f.pretty {
+			writeNewline(s)
+			writeFullIndent(s, f.depth)
+		}
+	} else {
+		writeLeftcurly(s)
+	}
+	typ := val.Type()
+	for i, n := 0, val.NumField(); i < n; i++ {
+		field := typ.Field(i)
+		if i > 0 {
+			f.sep(s)
+		}
+		if f.verbose {
+			s.Write([]byte(field.Name))
+			writeColon(s)
+		}
+		if field.PkgPath == "" {
+			f.format(s, c, val.Field(i))
+		} else {
+			field := typ.Field(i)
+			var valptr reflect.Value
+			if val.CanAddr() {
+				valptr = val.Addr()
+			} else {
+				valptr = reflect.New(typ)
+				reflect.Indirect(valptr).Set(val)
+			}
+			fieldp := valptr.Pointer() + field.Offset
+			fieldptr := reflect.NewAt(field.Type, unsafe.Pointer(fieldp))
+			f.format(s, c, reflect.Indirect(fieldptr))
+		}
+	}
+	f.depth--
+	if f.verbose && f.pretty {
+		writeComma(s)
+		writeNewline(s)
+		writeFullIndent(s, f.depth)
+	}
+	writeRightcurly(s)
+}
 func (f *formatter) sep(s fmt.State) {
 	if f.verbose {
 		writeComma(s)
@@ -278,7 +292,6 @@ func reconstructFlags(s fmt.State, c rune) string {
 	flags = append(flags, c)
 	return string(flags)
 }
-
 func addFlagRune(q []rune, s fmt.State, r rune) []rune {
 	if s.Flag(int(r)) {
 		return append(q, r)
@@ -286,6 +299,7 @@ func addFlagRune(q []rune, s fmt.State, r rune) []rune {
 	return q
 }
 
+// for test/debug
 func printf(format string, v ...interface{}) {
 	fprintf(os.Stdout, format, v...)
 }
