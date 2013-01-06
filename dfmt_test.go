@@ -12,6 +12,13 @@ type testStruct struct {
 
 // %v and %+v as well as %#v and %#V output the same strings when desired
 func TestCompatability(t *testing.T) {
+	testflags := func(flags string, i int, test interface{}) {
+		std := fmt.Sprintf("%"+flags+"v", test)
+		deep := fmt.Sprintf("%"+flags+"v", Formatter(debugging, test))
+		if std != deep {
+			t.Errorf("[%d] "+flags+" mismatch %q != %q ", i, std, deep)
+		}
+	}
 	for i, test := range []interface{}{
 		nil,
 		(*testStruct)(nil),
@@ -28,16 +35,30 @@ func TestCompatability(t *testing.T) {
 		testStruct{&testStruct{}, map[string]int{"abc": 2}},
 		&testStruct{&testStruct{}, map[string]int{"abc": 2}},
 	} {
-		std := fmt.Sprintf("%v", test)
-		deep := fmt.Sprintf("%v", Formatter(debugging, test))
-		if std != deep {
-			t.Errorf("[%d] # mismatch %q != %q ", i, std, deep)
-		}
-		std = fmt.Sprintf("%#v", test)
-		deep = fmt.Sprintf("%#v", Formatter(debugging, test))
-		if std != deep {
-			t.Errorf("[%d] # mismatch %q != %q ", i, std, deep)
-		}
+		testflags("", i, test)
+
+		testflags("#", i, test)
+
+		testflags("+", i, test)
+		testflags("#+", i, test)
+
+		testflags("-", i, test)
+		testflags("#-", i, test)
+		testflags("+-", i, test)
+		testflags("#+-", i, test)
+
+		testflags("0", i, test)
+		testflags("-0", i, test)
+		testflags("#-0", i, test)
+		testflags("+-0", i, test)
+		testflags("#+-0", i, test)
+
+		testflags(" ", i, test)
+		testflags("0 ", i, test)
+		testflags("-0 ", i, test)
+		testflags("#-0 ", i, test)
+		testflags("+-0 ", i, test)
+		testflags("#+-0 ", i, test)
 	}
 }
 

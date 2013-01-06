@@ -61,6 +61,8 @@ const (
 type formatter struct {
 	depth   int
 	verbose bool
+	extra   bool
+	space   bool
 	deep    bool
 	pretty  bool
 	ifaceok bool
@@ -95,6 +97,8 @@ func (f *formatter) Format(s fmt.State, c rune) {
 	}
 
 	f.verbose = s.Flag('#')
+	f.extra = s.Flag('+')
+	f.space = s.Flag(' ')
 	f.format(s, c, reflect.ValueOf(f.v))
 }
 
@@ -170,9 +174,15 @@ func (f *formatter) formatPtr(s fmt.State, c rune, val reflect.Value) {
 			writeType(s, val)
 			writeRightparen(s)
 			writeLeftparen(s)
+			if f.space {
+				writeSpace(s)
+			}
 			fmt.Fprintf(s, "%p", val.Interface())
 			writeRightparen(s)
 		} else {
+			if f.space {
+				writeSpace(s)
+			}
 			fmt.Fprintf(s, "%p", val.Interface())
 		}
 		return
@@ -265,7 +275,7 @@ func (f *formatter) formatStruct(s fmt.State, c rune, val reflect.Value) {
 		if i > 0 {
 			f.sep(s)
 		}
-		if f.verbose {
+		if f.verbose || f.extra {
 			s.Write([]byte(field.Name))
 			writeColon(s)
 		}
