@@ -1,6 +1,5 @@
 /*
-A drop-in replacement for the standard library fmt package which uses
-deepformat.Formatter.
+A drop-in replacement for the standard library fmt package using dfmt.Formatter.
 
 This package is not performant. Use it during development but keep fmt in
 production code.
@@ -13,18 +12,18 @@ import (
 	"io"
 	"os"
 
-	"github.com/bmatsuo/go-deepfmt"
+	"github.com/bmatsuo/go-dfmt"
 )
 
 func Errorf(format string, a ...interface{}) error {
 	for i := range a {
-		a[i] = deepfmt.NewFormatter(a[i])
+		a[i] = dfmt.NewFormatter(a[i])
 	}
 	return fmt.Errorf(format, a)
 }
 func Fprintf(w io.Writer, format string, a ...interface{}) (n int, err error) {
 	for i := range a {
-		a[i] = deepfmt.NewFormatter(a[i])
+		a[i] = dfmt.NewFormatter(a[i])
 	}
 	return fmt.Fprintf(w, format, a)
 }
