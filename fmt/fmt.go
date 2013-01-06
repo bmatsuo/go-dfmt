@@ -17,13 +17,13 @@ import (
 
 func Errorf(format string, a ...interface{}) error {
 	for i := range a {
-		a[i] = dfmt.NewFormatter(a[i])
+		a[i] = dfmt.Formatter(a[i])
 	}
 	return fmt.Errorf(format, a)
 }
 func Fprintf(w io.Writer, format string, a ...interface{}) (n int, err error) {
 	for i := range a {
-		a[i] = dfmt.NewFormatter(a[i])
+		a[i] = dfmt.Formatter(a[i])
 	}
 	return fmt.Fprintf(w, format, a)
 }

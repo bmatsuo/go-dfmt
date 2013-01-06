@@ -63,7 +63,7 @@ type formatter struct {
 //		-	ignore interfaces fmt.Formatter, fmt.GoStringer, fmt.Stringer, and error
 //		' '	pretty print
 //		#	print types
-func NewFormatter(v interface{}) fmt.Formatter {
+func Formatter(v interface{}) fmt.Formatter {
 	return &formatter{v: v}
 }
 
@@ -322,7 +322,7 @@ func sprintf(format string, v ...interface{}) string {
 func fprintf(w io.Writer, format string, v ...interface{}) {
 	_v := make([]interface{}, len(v))
 	for i := range v {
-		_v[i] = NewFormatter(v[i])
+		_v[i] = Formatter(v[i])
 	}
 	fmt.Fprintf(w, format, _v...)
 }

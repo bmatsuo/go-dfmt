@@ -29,12 +29,12 @@ func TestCompatability(t *testing.T) {
 		&testStruct{&testStruct{}, map[string]int{"abc": 2}},
 	} {
 		std := fmt.Sprintf("%v", test)
-		deep := fmt.Sprintf("%0v", NewFormatter(test))
+		deep := fmt.Sprintf("%0v", Formatter(test))
 		if std != deep {
 			t.Errorf("[%d] # mismatch %q != %q ", i, std, deep)
 		}
 		std = fmt.Sprintf("%#v", test)
-		deep = fmt.Sprintf("%#0v", NewFormatter(test))
+		deep = fmt.Sprintf("%#0v", Formatter(test))
 		if std != deep {
 			t.Errorf("[%d] # mismatch %q != %q ", i, std, deep)
 		}
