@@ -16,11 +16,14 @@ var (
 	rightcurlyBytes  = []byte("}")
 	leftsquareBytes  = []byte("[")
 	rightsquareBytes = []byte("]")
+	leftparenBytes   = []byte("(")
+	rightparenBytes  = []byte(")")
 	colonBytes       = []byte(":")
 	commaBytes       = []byte(",")
 	spaceBytes       = []byte(" ")
 	ptrBytes         = []byte("&")
 	nilBytes         = []byte("nil")
+	nilangleBytes    = []byte("<nil>")
 	mapBytes         = []byte("map")
 )
 
@@ -30,11 +33,14 @@ func writeLeftcurly(s fmt.State)             { s.Write(leftcurlyBytes) }
 func writeRightcurly(s fmt.State)            { s.Write(rightcurlyBytes) }
 func writeLeftsquare(s fmt.State)            { s.Write(leftsquareBytes) }
 func writeRightsquare(s fmt.State)           { s.Write(rightsquareBytes) }
+func writeLeftparen(s fmt.State)             { s.Write(leftparenBytes) }
+func writeRightparen(s fmt.State)            { s.Write(rightparenBytes) }
 func writeColon(s fmt.State)                 { s.Write(colonBytes) }
 func writeComma(s fmt.State)                 { s.Write(commaBytes) }
 func writeSpace(s fmt.State)                 { s.Write(spaceBytes) }
 func writePtr(s fmt.State)                   { s.Write(ptrBytes) }
 func writeNil(s fmt.State)                   { s.Write(nilBytes) }
+func writeNilangle(s fmt.State)              { s.Write(nilangleBytes) }
 func writeMap(s fmt.State)                   { s.Write(mapBytes) }
 func writeType(s fmt.State, v reflect.Value) { s.Write([]byte(v.Type().String())) }
 func writeFullIndent(s fmt.State, n int) {
@@ -43,25 +49,34 @@ func writeFullIndent(s fmt.State, n int) {
 	}
 }
 
-type Formatter struct {
+type formatter struct {
 	depth   int
 	verbose bool
 	pretty  bool
 	v       interface{}
 }
 
-func (f *Formatter) Format(s fmt.State, c rune) {
-	if c != 'V' {
+func NewFormatter(v interface{}) fmt.Formatter {
+	return &formatter{v: v}
+}
+
+func (f *formatter) Format(s fmt.State, c rune) {
+	if c != 'v' || !s.Flag('+') {
 		newfmt := reconstructFlags(s, c)
 		fmt.Fprintf(s, newfmt, f.v)
 		return
 	}
+	if f.v == nil {
+		writeNilangle(s)
+		return
+	}
+
 	f.verbose = s.Flag('#')
 	f.pretty = s.Flag(' ')
 	f.format(s, c, reflect.ValueOf(f.v))
 }
 
-func (f *Formatter) format(s fmt.State, c rune, val reflect.Value) {
+func (f *formatter) format(s fmt.State, c rune, val reflect.Value) {
 	if !f.verbose {
 		switch v := val.Interface(); v.(type) {
 		case fmt.Stringer:
@@ -79,7 +94,16 @@ func (f *Formatter) format(s fmt.State, c rune, val reflect.Value) {
 	switch val.Kind() {
 	case reflect.Ptr:
 		if val.IsNil() {
-			writeNil(s)
+			if f.verbose {
+				writeLeftparen(s)
+				writeType(s, val)
+				writeRightparen(s)
+				writeLeftparen(s)
+				writeNil(s)
+				writeRightparen(s)
+			} else {
+				writeNilangle(s)
+			}
 			return
 		}
 		writePtr(s)
@@ -199,7 +223,7 @@ func (f *Formatter) format(s fmt.State, c rune, val reflect.Value) {
 	}
 }
 
-func (f *Formatter) sep(s fmt.State) {
+func (f *formatter) sep(s fmt.State) {
 	if f.verbose {
 		writeComma(s)
 		if f.pretty {
@@ -241,7 +265,7 @@ func Sprintf(format string, v ...interface{}) string {
 func Fprintf(w io.Writer, format string, v ...interface{}) {
 	_v := make([]interface{}, len(v))
 	for i := range v {
-		_v[i] = &Formatter{v: v[i]}
+		_v[i] = NewFormatter(v[i])
 	}
 	fmt.Fprintf(w, format, _v...)
 }
