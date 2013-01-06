@@ -49,12 +49,22 @@ func writeFullIndent(s fmt.State, n int) {
 	}
 }
 
+type FormatMode uint
+
+const (
+	Deep FormatMode = 1 << iota
+	Pretty
+	NoIface
+	debugging
+)
+
 type formatter struct {
 	depth   int
 	verbose bool
 	deep    bool
 	pretty  bool
 	ifaceok bool
+	debug   bool
 	v       interface{}
 }
 
@@ -63,12 +73,18 @@ type formatter struct {
 //		-	ignore interfaces fmt.Formatter, fmt.GoStringer, fmt.Stringer, and error
 //		' '	pretty print
 //		#	print types
-func Formatter(v interface{}) fmt.Formatter {
-	return &formatter{v: v}
+func Formatter(mode FormatMode, v interface{}) fmt.Formatter {
+	return &formatter{
+		deep:    mode&Deep != 0,
+		pretty:  mode&Pretty != 0,
+		ifaceok: mode&NoIface == 0,
+		debug:   mode&debugging != 0,
+		v:       v,
+	}
 }
 
 func (f *formatter) Format(s fmt.State, c rune) {
-	if c != 'v' || (!s.Flag('+') && !s.Flag(' ') && !s.Flag('0')) {
+	if c != 'v' || (!f.deep && !f.pretty && f.ifaceok && !f.debug) {
 		newfmt := reconstructFlags(s, c)
 		fmt.Fprintf(s, newfmt, f.v)
 		return
@@ -79,9 +95,6 @@ func (f *formatter) Format(s fmt.State, c rune) {
 	}
 
 	f.verbose = s.Flag('#')
-	f.deep = s.Flag('+')
-	f.pretty = s.Flag(' ')
-	f.ifaceok = !s.Flag('-')
 	f.format(s, c, reflect.ValueOf(f.v))
 }
 
@@ -311,18 +324,18 @@ func addFlagRune(q []rune, s fmt.State, r rune) []rune {
 }
 
 // for test/debug
-func printf(format string, v ...interface{}) {
-	fprintf(os.Stdout, format, v...)
+func printf(mode FormatMode, format string, v ...interface{}) {
+	fprintf(os.Stdout, mode, format, v...)
 }
-func sprintf(format string, v ...interface{}) string {
+func sprintf(mode FormatMode, format string, v ...interface{}) string {
 	buf := new(bytes.Buffer)
-	fprintf(buf, format, v...)
+	fprintf(buf, mode, format, v...)
 	return buf.String()
 }
-func fprintf(w io.Writer, format string, v ...interface{}) {
+func fprintf(w io.Writer, mode FormatMode, format string, v ...interface{}) {
 	_v := make([]interface{}, len(v))
 	for i := range v {
-		_v[i] = Formatter(v[i])
+		_v[i] = Formatter(mode, v[i])
 	}
 	fmt.Fprintf(w, format, _v...)
 }

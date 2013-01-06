@@ -29,12 +29,12 @@ func TestCompatability(t *testing.T) {
 		&testStruct{&testStruct{}, map[string]int{"abc": 2}},
 	} {
 		std := fmt.Sprintf("%v", test)
-		deep := fmt.Sprintf("%0v", Formatter(test))
+		deep := fmt.Sprintf("%v", Formatter(debugging, test))
 		if std != deep {
 			t.Errorf("[%d] # mismatch %q != %q ", i, std, deep)
 		}
 		std = fmt.Sprintf("%#v", test)
-		deep = fmt.Sprintf("%#0v", Formatter(test))
+		deep = fmt.Sprintf("%#v", Formatter(debugging, test))
 		if std != deep {
 			t.Errorf("[%d] # mismatch %q != %q ", i, std, deep)
 		}
@@ -43,33 +43,33 @@ func TestCompatability(t *testing.T) {
 
 func TestDeepfmt(t *testing.T) {
 	/*
-		printf("%+v\n", nil)
-		printf("%#+v\n", (*testStruct)(nil))
-		printf("%+v\n", "abc")
-		printf("%#+v\n", "abc")
-		printf("%+v\n", 12+4i)
-		printf("%#+v\n", 12+4i)
-		printf("%+v\n", []string{"a", "b"})
-		printf("%#+v\n", []string{"a", "b"})
-		printf("%# +v\n", []string{"a", "b"})
-		printf("%+v\n", map[string]int64{"a": 1, "b": 2})
-		printf("%#+v\n", map[string]int64{"a": 1, "b": 2})
-		printf("%# +v\n", map[string]int64{"a": 1, "b": 2})
-		printf("%+v\n", &struct{ A, b int }{1, 2})
-		printf("%#+v\n", &struct{ A, b int }{1, 2})
-		printf("%# +v\n", &struct{ A, b int }{1, 2})
-		printf("%+v\n", struct{ A, b int }{1, 2})
-		printf("%#+v\n", struct{ A, b int }{1, 2})
-		printf("%# +v\n", struct{ A, b int }{1, 2})
-		printf("%#+v\n", testStruct{nil, map[string]int{"abc": 2}})
-		printf("%#+v\n", &testStruct{nil, map[string]int{"abc": 2}})
-		printf("%# 0v\n", &testStruct{&testStruct{}, map[string]int{"abc": 2}})
+		printf(Deep, "%v\n", nil)
+		printf(Deep, "%#v\n", (*testStruct)(nil))
+		printf(Deep, "%v\n", "abc")
+		printf(Deep, "%#v\n", "abc")
+		printf(Deep, "%v\n", 12+4i)
+		printf(Deep, "%#v\n", 12+4i)
+		printf(Deep, "%v\n", []string{"a", "b"})
+		printf(Deep, "%#v\n", []string{"a", "b"})
+		printf(Deep|Pretty, "%#v\n", []string{"a", "b"})
+		printf(Deep, "%v\n", map[string]int64{"a": 1, "b": 2})
+		printf(Deep, "%#v\n", map[string]int64{"a": 1, "b": 2})
+		printf(Deep|Pretty, "%#v\n", map[string]int64{"a": 1, "b": 2})
+		printf(Deep, "%v\n", &struct{ A, b int }{1, 2})
+		printf(Deep, "%#v\n", &struct{ A, b int }{1, 2})
+		printf(Deep|Pretty, "%#v\n", &struct{ A, b int }{1, 2})
+		printf(Deep, "%v\n", struct{ A, b int }{1, 2})
+		printf(Deep, "%#v\n", struct{ A, b int }{1, 2})
+		printf(Deep|Pretty, "%#v\n", struct{ A, b int }{1, 2})
+		printf(Deep, "%#v\n", testStruct{nil, map[string]int{"abc": 2}})
+		printf(Deep, "%#v\n", &testStruct{nil, map[string]int{"abc": 2}})
+		printf(Deep|debugging, "%#v\n", &testStruct{&testStruct{}, map[string]int{"abc": 2}})
 
 		var x ****testStruct
 		x = new(***testStruct)
 		*x = new(**testStruct)
 		**x = new(*testStruct)
-		printf("%+v\n", x)
-		printf("%#+v\n", x)
+		printf(Deep, "%v\n", x)
+		printf(Deep, "%#v\n", x)
 	*/
 }
